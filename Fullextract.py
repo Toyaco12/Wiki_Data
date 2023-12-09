@@ -3,10 +3,12 @@ import requests
 from bs4 import BeautifulSoup
 from io import StringIO
 import os
+import re
 
 def find_country_column(columns):
+    pattern = re.compile(r'\bcountry\b|\bterritory\b|\bcountries\b', re.IGNORECASE)
     for col in columns:
-        if 'country' in col.lower() or 'territory' in col.lower():
+        if pattern.search(col):
             return col
     return None
 
