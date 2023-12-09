@@ -6,7 +6,7 @@ import os
 import re
 
 def find_country_column(columns):
-    pattern = re.compile(r'\bcountry\b|\bterritory\b|\bcountries\b', re.IGNORECASE)
+    pattern = re.compile(r'\bcountry\b|\bterritory\b|\bcountries\b|\blocation\b', re.IGNORECASE)
     for col in columns:
         if pattern.search(col):
             return col
@@ -19,17 +19,39 @@ def extract_wikipedia_table_to_csv(url, output_file):
     # Parse the HTML content of the page
     soup = BeautifulSoup(response.text, 'html.parser')
 
-    # Find the table in the HTML
-    table = soup.find('table', {'class':'wikitable'})
+    # Find all tables in the HTML
+    tables = soup.find_all('table', {'class':'wikitable'})
 
-    # Convert the HTML table to a string
-    table_str = str(table)
+    # Check if there are multiple tables
+    if len(tables) > 1:
+        print(f"{len(tables)} tables found. Please choose which table to extract:")
+
+        # Show a preview of each table
+        for i, table in enumerate(tables, 1):
+            table_str = str(table)
+            df_preview = pd.read_html(StringIO(table_str))[0]
+            print(f"\nTable {i} Preview:")
+            print(df_preview.head())
+
+        # Ask the user to choose a table
+        table_choice = int(input("\nEnter the number of the table you want to extract: ")) - 1
+
+        # Validate the choice
+        if table_choice < 0 or table_choice >= len(tables):
+            print("Invalid table number. Exiting.")
+            exit(1)
+    else:
+        table_choice = 0
+
+    # Convert the chosen HTML table to a string
+    table_str = str(tables[table_choice])
 
     # Use StringIO to read the string as a file-like object
     df = pd.read_html(StringIO(table_str))[0]
 
     # Save the DataFrame to a CSV file
     df.to_csv(output_file, index=False)
+
 
 def clean_date(input_file):
     # Charger le fichier CSV
